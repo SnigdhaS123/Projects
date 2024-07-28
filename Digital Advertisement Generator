@@ -1,0 +1,84 @@
+#installing the necessary libraries 
+!pip install transformers
+!pip install diffusers
+!pip install torch
+!pip install pillow
+!pip install gradio
+
+import torch
+from diffusers import StableDiffusionPipeline
+
+# Load the Stable Diffusion pipeline
+model_id = "CompVis/stable-diffusion-v1-4"
+pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float16).to("cuda")
+
+# Generate an image based on a text prompt
+prompt = "A beautiful landscape with mountains and a river"
+image = pipe(prompt).images[0]
+
+# Save the generated image
+image.save("generated_image.png")
+
+from PIL import Image, ImageDraw, ImageFont
+
+# Open the generated image
+image = Image.open("generated_image.png")
+
+# Initialize ImageDraw
+draw = ImageDraw.Draw(image)
+
+# Define the text and font
+text = "Explore the beauty of nature!"
+font = ImageFont.load_default()
+
+# Calculate text width and height
+textwidth, textheight = draw.textsize(text, font)
+
+# Calculate the x, y coordinates of the text
+width, height = image.size
+x = (width - textwidth) / 2
+y = height - textheight - 10
+
+# Add text to image
+draw.text((x, y), text, font=font, fill="white")
+
+# Save the edited image
+image.save("advertisement_image.png")
+
+import gradio as gr
+import torch
+from diffusers import StableDiffusionPipeline
+from PIL import Image, ImageDraw, ImageFont
+
+# Function to generate image and overlay text
+def generate_ad(prompt, text):
+    # Generate image
+    image = pipe(prompt).images[0]
+
+    # Overlay text
+    draw = ImageDraw.Draw(image)
+    font = ImageFont.load_default()
+    textwidth, textheight = draw.textsize(text, font)
+    width, height = image.size
+    x = (width - textwidth) / 2
+    y = height - textheight - 10
+    draw.text((x, y), text, font=font, fill="white")
+
+    # Save the image in memory
+    output_image = "output_ad.png"
+    image.save(output_image)
+
+    return output_image
+
+# Create Gradio interface
+interface = gr.Interface(
+    fn=generate_ad,
+    inputs=["text", "text"],
+    outputs="image",
+    title="Advertisement Generator",
+    description="Enter a prompt to generate an image and overlay text for your advertisement."
+)
+
+# Launch the interface
+interface.launch()
+
